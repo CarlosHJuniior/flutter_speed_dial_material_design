@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial_material_design/flutter_speed_dial_material_design.dart';
 
@@ -46,18 +47,18 @@ class _MyPageState extends State<MyPage> {
 
   Widget _buildFloatingActionButton() {
     final icons = [
-      SpeedDialAction(child: Icon(Icons.mode_edit)),
+      SpeedDialAction(child: Icon(Icons.mode_edit), label: Text('Um conteudo aqui', style: TextStyle(fontSize: 14, color: Colors.black, inherit: false))),
       SpeedDialAction(child: Icon(Icons.date_range)),
-      SpeedDialAction(child: Icon(Icons.list)),
+      SpeedDialAction(child: Icon(Icons.list), label: Text('Um conteudo aqui', style: TextStyle(fontSize: 14, color: Colors.black, inherit: false))),
     ];
 
     return SpeedDialFloatingActionButton(
       actions: icons,
-      childOnFold: Icon(Icons.event_note, key: UniqueKey()),
-      //childOnUnfold: Icon(Icons.add),
-      useRotateAnimation: false,
+      childOnFold: Icon(Icons.add, key: UniqueKey()),
+      useRotateAnimation: true,
       onAction: _onSpeedDialAction,
       controller: _controller,
+      fullscreen: true,
     );
   }
 

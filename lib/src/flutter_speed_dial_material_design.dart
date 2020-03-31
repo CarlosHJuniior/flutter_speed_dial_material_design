@@ -1,6 +1,9 @@
+import 'dart:core';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_speed_dial_material_design/src/layout.dart';
 import 'package:flutter_speed_dial_material_design/src/speed_dial_controller.dart';
 
@@ -12,7 +15,7 @@ import 'package:flutter_speed_dial_material_design/src/speed_dial_controller.dar
 // Codes from: https://github.com/bizz84/bottom_bar_fab_flutter
 //             https://github.com/matthew-carroll/fluttery/blob/master/lib/src/layout_overlays.dart
 
-class SpeedDialFloatingActionButton extends StatelessWidget {
+class SpeedDialFloatingActionButton extends StatefulWidget {
   /// Creates Floating action button with speed dial attached.
   ///
   /// [childOnFold] is default widget attched to Floating action button.
@@ -31,6 +34,7 @@ class SpeedDialFloatingActionButton extends StatelessWidget {
     this.useRotateAnimation = false,
     this.animationDuration = 250,
     this.controller,
+    this.fullscreen = false,
   });
 
   final List<SpeedDialAction> actions;
@@ -40,38 +44,68 @@ class SpeedDialFloatingActionButton extends StatelessWidget {
   final int animationDuration;
   final bool useRotateAnimation;
   final SpeedDialController controller;
+  final bool fullscreen;
+
+  @override
+  State<StatefulWidget> createState() => SpeedDialFloatingActionButtonState();
+}
+
+class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionButton> {
+  final GlobalKey key = GlobalKey();
+  OverlayEntry oEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    if (oEntry != null) {
+      oEntry.remove();
+    }
+
+    oEntry = OverlayEntry(builder: (_) => renderButton());
+    SchedulerBinding.instance.addPostFrameCallback((_) => Overlay.of(context).insert(oEntry));
+  }
+
+  @override
+  void didUpdateWidget(SpeedDialFloatingActionButton oldWidget) {
+    oEntry.remove();
+    SchedulerBinding.instance.addPostFrameCallback((_) => Overlay.of(context).insert(oEntry));
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    oEntry.remove();
+    super.dispose();
+  }
+
+  Widget renderButton() {
+    RenderBox box = key.currentContext.findRenderObject();
+    final Offset offset = box.localToGlobal(Offset.zero);
+
+    return SpeedDial(
+      controller: widget.controller,
+      actions: widget.actions,
+      onAction: widget.onAction,
+      childOnFold: widget.childOnFold,
+      childOnUnfold: widget.childOnUnfold,
+      animationDuration: widget.animationDuration,
+      useRotateAnimation: widget.useRotateAnimation,
+      fullscreen: widget.fullscreen,
+      offset: Offset(offset.dx, offset.dy),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnchoredOverlay(
-      showOverlay: true,
-      overlayBuilder: (context, offset) {
-        return CenterAbout(
-          position: Offset(offset.dx, offset.dy - actions.length * 35.0),
-          child: SpeedDial(
-            controller: controller,
-            actions: actions,
-            onAction: onAction,
-            childOnFold: childOnFold,
-            childOnUnfold: childOnUnfold,
-            animationDuration: animationDuration,
-            useRotateAnimation: useRotateAnimation,
-          ),
-        );
-      },
-      child: FloatingActionButton(onPressed: () {}),
-    );
+    return FloatingActionButton(onPressed: () {}, key: key);
   }
 }
 
-class SpeedDialAction extends StatelessWidget {
-  SpeedDialAction({this.child});
-  final Widget child;
+class SpeedDialAction {
+  SpeedDialAction({this.child, this.label});
 
-  @override
-  Widget build(BuildContext context) {
-    return child;
-  }
+  final Widget child;
+  final Widget label;
 }
 
 class SpeedDial extends StatefulWidget {
@@ -83,6 +117,8 @@ class SpeedDial extends StatefulWidget {
     this.animationDuration,
     this.useRotateAnimation,
     this.controller,
+    this.fullscreen,
+    this.offset,
   });
 
   final SpeedDialController controller;
@@ -92,6 +128,8 @@ class SpeedDial extends StatefulWidget {
   final Widget childOnUnfold;
   final int animationDuration;
   final bool useRotateAnimation;
+  final bool fullscreen;
+  final Offset offset;
 
   @override
   State createState() => _SpeedDialState();
@@ -110,6 +148,10 @@ class _SpeedDialState extends State<SpeedDial> with TickerProviderStateMixin {
 
     widget.controller ?? SpeedDialController()
       ..setAnimator(_controller);
+
+    if (widget.fullscreen) {
+      _controller.addStatusListener(_onFullScreen);
+    }
   }
 
   @override
@@ -118,39 +160,93 @@ class _SpeedDialState extends State<SpeedDial> with TickerProviderStateMixin {
   }
 
   Widget _buildActions() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(widget.actions.length, (int index) {
-        return _buildChild(index);
-      }).reversed.toList()
-        ..add(
-          _buildFab(),
+    final Size fullsize = MediaQuery.of(context).size; // device size
+    final double wButton = 56; // button width
+    final double hButtom = 56; // button height + ( icon height * length icons )
+
+    double start;
+    if (widget.offset.dx > (fullsize.width / 2)) {
+      start = fullsize.width - (widget.offset.dx + wButton);
+    } else {
+      start = fullsize.width - widget.offset.dx - wButton;
+    }
+
+    double bottom;
+    if (widget.offset.dy > (fullsize.height / 2)) {
+      bottom = fullsize.height - widget.offset.dy - hButtom;
+    } else {
+      bottom = fullsize.height + (widget.offset.dy.abs() - hButtom);
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        Positioned.directional(
+          textDirection: TextDirection.rtl,
+          bottom: bottom,
+          start: start,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(widget.actions.length, (int index) {
+              return _buildChild(index);
+            }).reversed.toList()
+              ..add(_buildFab()),
+          ),
         ),
+      ],
     );
   }
 
   Widget _buildChild(int index) {
     Color backgroundColor = Theme.of(context).cardColor;
     Color foregroundColor = Theme.of(context).accentColor;
-    return Container(
-      height: 70.0,
-      width: 56.0,
-      alignment: FractionalOffset.topCenter,
-      child: ScaleTransition(
-        scale: CurvedAnimation(
-          parent: _controller,
-          curve: Interval(0.0, (index + 1) / widget.actions.length,
-              curve: Curves.linear),
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        FadeTransition(
+          opacity: Tween<double>(begin: 0, end: 1).animate(_controller),
+          child: widget.actions[index].label != null
+              ? Container(
+                  padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 8.0),
+                  margin: EdgeInsets.only(right: 5.0, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.7),
+                        offset: Offset(0.8, 0.8),
+                        blurRadius: 2.4,
+                      )
+                    ],
+                  ),
+                  child: widget.actions[index].label,
+                )
+              : Container(),
         ),
-        child: FloatingActionButton(
-          backgroundColor: backgroundColor,
-          foregroundColor: foregroundColor,
-          mini: true,
-          child: widget.actions[index],
-          onPressed: () => _onAction(index),
+        Container(
+          height: 70.0,
+          width: 56.0,
+          alignment: FractionalOffset.topCenter,
+          child: ScaleTransition(
+            scale: CurvedAnimation(
+              parent: _controller,
+              curve: Interval(0.0, (index + 1) / widget.actions.length, curve: Curves.linear),
+            ),
+            child: FloatingActionButton(
+              backgroundColor: backgroundColor,
+              foregroundColor: foregroundColor,
+              mini: true,
+              child: widget.actions[index].child,
+              onPressed: () => _onAction(index),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -161,13 +257,9 @@ class _SpeedDialState extends State<SpeedDial> with TickerProviderStateMixin {
           animation: _controller,
           builder: (context, child) {
             if (widget.childOnUnfold == null) {
-              return widget.useRotateAnimation
-                  ? _buildRotation(widget.childOnFold)
-                  : widget.childOnFold;
+              return widget.useRotateAnimation ? _buildRotation(widget.childOnFold) : widget.childOnFold;
             } else {
-              return widget.useRotateAnimation
-                  ? _buildRotation(_buildAnimatedSwitcher())
-                  : _buildAnimatedSwitcher();
+              return widget.useRotateAnimation ? _buildRotation(_buildAnimatedSwitcher()) : _buildAnimatedSwitcher();
             }
           }),
       elevation: 2.0,
@@ -192,13 +284,40 @@ class _SpeedDialState extends State<SpeedDial> with TickerProviderStateMixin {
   Widget _buildAnimatedSwitcher() {
     return AnimatedSwitcher(
       duration: Duration(milliseconds: widget.animationDuration),
-      child:
-          _controller.value < 0.5 ? widget.childOnFold : widget.childOnUnfold,
+      child: _controller.value < 0.5 ? widget.childOnFold : widget.childOnUnfold,
     );
   }
 
   void _onAction(int index) {
     _controller.reverse();
     widget.onAction(index);
+  }
+
+  void _onFullScreen(AnimationStatus status) {
+    Future<bool> _onReturn() async {
+      _controller.reverse();
+      return false;
+    }
+
+    if (status == AnimationStatus.forward) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          fullscreenDialog: true,
+          opaque: false,
+          barrierDismissible: true,
+          transitionDuration: Duration(milliseconds: 100),
+          barrierColor: Colors.black54,
+          pageBuilder: (BuildContext context, _, __) {
+            return WillPopScope(
+              child: Container(),
+              onWillPop: _onReturn,
+            );
+          },
+        ),
+      );
+    }
+    if (status == AnimationStatus.reverse) {
+      Navigator.pop(context);
+    }
   }
 }
