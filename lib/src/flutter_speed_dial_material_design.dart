@@ -71,6 +71,8 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
 
   @override
   void didUpdateWidget(SpeedDialFloatingActionButton oldWidget) {
+    oEntry = OverlayEntry(builder: (_) => renderButton());
+    
     removeButton();
     if (!flagDeactivate) insertButton();
     super.didUpdateWidget(oldWidget);
