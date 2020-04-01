@@ -77,11 +77,21 @@ class _MyPageState extends State<MyPage> {
             ),
             IconButton(
               icon: Icon(Icons.today),
-              onPressed: () => {},
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => Test())),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class Test extends StatelessWidget{
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(color: Colors.amberAccent),
     );
   }
 }

@@ -52,6 +52,8 @@ class SpeedDialFloatingActionButton extends StatefulWidget {
 
 class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionButton> {
   final GlobalKey key = GlobalKey();
+  bool flagDeactivate = false;
+  bool flagRender = false;
   OverlayEntry oEntry;
 
   @override
@@ -62,13 +64,14 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
     }
 
     oEntry = OverlayEntry(builder: (_) => renderButton());
-    SchedulerBinding.instance.addPostFrameCallback((_) => Overlay.of(context).insert(oEntry));
+    insertButton();
   }
 
   @override
   void didUpdateWidget(SpeedDialFloatingActionButton oldWidget) {
-    oEntry.remove();
-    SchedulerBinding.instance.addPostFrameCallback((_) => Overlay.of(context).insert(oEntry));
+    print('update');
+    removeButton();
+    if (!flagDeactivate) insertButton();
     super.didUpdateWidget(oldWidget);
   }
 
@@ -77,7 +80,27 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
     oEntry.remove();
     super.dispose();
   }
-
+  
+  @override
+  void deactivate() {
+    flagDeactivate = !flagDeactivate;
+    super.deactivate();
+  }
+  
+  void removeButton() {
+    if (flagRender) {
+      oEntry.remove();
+      flagRender = !flagRender;
+    }
+  }
+  
+  void insertButton() {
+    if (!flagRender) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => Overlay.of(context).insert(oEntry));
+      flagRender = !flagRender;
+    }
+  }
+  
   Widget renderButton() {
     RenderBox box = key.currentContext.findRenderObject();
     final Offset offset = box.localToGlobal(Offset.zero);
@@ -97,6 +120,7 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
 
   @override
   Widget build(BuildContext context) {
+    print('build');
     return FloatingActionButton(onPressed: () {}, key: key);
   }
 }
