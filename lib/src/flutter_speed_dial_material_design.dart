@@ -54,7 +54,6 @@ class SpeedDialFloatingActionButton extends StatefulWidget {
 
 class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionButton> {
   final GlobalKey key = GlobalKey();
-  bool flagDeactivate = false;
   bool flagRender = false;
   OverlayEntry oEntry;
 
@@ -71,10 +70,10 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
 
   @override
   void didUpdateWidget(SpeedDialFloatingActionButton oldWidget) {
-    oEntry = OverlayEntry(builder: (_) => renderButton());
-    
     removeButton();
-    if (!flagDeactivate) insertButton();
+    if (ModalRoute.of(context).isCurrent) {
+      insertButton();
+    }
     super.didUpdateWidget(oldWidget);
   }
 
@@ -82,12 +81,6 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
   void dispose() {
     removeButton();
     super.dispose();
-  }
-
-  @override
-  void deactivate() {
-    flagDeactivate = !flagDeactivate;
-    super.deactivate();
   }
 
   void removeButton() {

@@ -75,7 +75,16 @@ class _MyPageState extends State<MyPage> {
           children: <Widget>[
             IconButton(
               icon: Icon(Icons.menu),
-              onPressed: () => setState(() => test = !test),
+              onPressed: () async {
+                setState(() => test = !test);
+                await showModalBottomSheet(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Container(height: 300, color: Colors.red[200]);
+                  },
+                );
+                setState(() => test = true);
+              },
             ),
             IconButton(
               icon: Icon(Icons.today),
