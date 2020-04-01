@@ -25,19 +25,15 @@ class _MyPageState extends State<MyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('FAB with Speed dial Sample'),
-            RaisedButton(
-              child: Text("Unfold FAB"),
-              onPressed: () {
-                _controller.unfold();
-              },
-            )
-          ],
-        ),
+      body: Stack(
+        children: <Widget>[
+          Positioned.directional(
+            textDirection: TextDirection.rtl,
+            end: 0,
+            bottom: 200,
+            child: Container(child: TextField(), width: MediaQuery.of(context).size.width),
+          )
+        ],
       ),
       floatingActionButton: _buildFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,

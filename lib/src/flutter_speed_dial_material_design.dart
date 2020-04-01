@@ -207,8 +207,8 @@ class _SpeedDialState extends State<SpeedDial> with TickerProviderStateMixin {
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        FadeTransition(
-          opacity: Tween<double>(begin: 0, end: 1).animate(_controller),
+        ScaleTransition(
+          scale: Tween<double>(begin: 0, end: 1).animate(_controller),
           child: widget.actions[index].label != null
               ? Container(
                   padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 8.0),
