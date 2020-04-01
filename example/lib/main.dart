@@ -21,6 +21,7 @@ class MyPage extends StatefulWidget {
 
 class _MyPageState extends State<MyPage> {
   SpeedDialController _controller = SpeedDialController();
+  bool test = true;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +56,7 @@ class _MyPageState extends State<MyPage> {
       onAction: _onSpeedDialAction,
       controller: _controller,
       fullscreen: true,
+      visible: test,
     );
   }
 
@@ -73,7 +75,7 @@ class _MyPageState extends State<MyPage> {
           children: <Widget>[
             IconButton(
               icon: Icon(Icons.menu),
-              onPressed: () => {},
+              onPressed: () => setState(() => test = !test),
             ),
             IconButton(
               icon: Icon(Icons.today),

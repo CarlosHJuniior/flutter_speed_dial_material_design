@@ -35,6 +35,7 @@ class SpeedDialFloatingActionButton extends StatefulWidget {
     this.animationDuration = 250,
     this.controller,
     this.fullscreen = false,
+    this.visible = true,
   });
 
   final List<SpeedDialAction> actions;
@@ -45,6 +46,7 @@ class SpeedDialFloatingActionButton extends StatefulWidget {
   final bool useRotateAnimation;
   final SpeedDialController controller;
   final bool fullscreen;
+  final bool visible;
 
   @override
   State<StatefulWidget> createState() => SpeedDialFloatingActionButtonState();
@@ -69,7 +71,6 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
 
   @override
   void didUpdateWidget(SpeedDialFloatingActionButton oldWidget) {
-    print('update');
     removeButton();
     if (!flagDeactivate) insertButton();
     super.didUpdateWidget(oldWidget);
@@ -77,51 +78,54 @@ class SpeedDialFloatingActionButtonState extends State<SpeedDialFloatingActionBu
 
   @override
   void dispose() {
-    oEntry.remove();
+    removeButton();
     super.dispose();
   }
-  
+
   @override
   void deactivate() {
     flagDeactivate = !flagDeactivate;
     super.deactivate();
   }
-  
+
   void removeButton() {
     if (flagRender) {
       oEntry.remove();
       flagRender = !flagRender;
     }
   }
-  
+
   void insertButton() {
     if (!flagRender) {
       SchedulerBinding.instance.addPostFrameCallback((_) => Overlay.of(context).insert(oEntry));
       flagRender = !flagRender;
     }
   }
-  
-  Widget renderButton() {
-    RenderBox box = key.currentContext.findRenderObject();
-    final Offset offset = box.localToGlobal(Offset.zero);
 
-    return SpeedDial(
-      controller: widget.controller,
-      actions: widget.actions,
-      onAction: widget.onAction,
-      childOnFold: widget.childOnFold,
-      childOnUnfold: widget.childOnUnfold,
-      animationDuration: widget.animationDuration,
-      useRotateAnimation: widget.useRotateAnimation,
-      fullscreen: widget.fullscreen,
-      offset: Offset(offset.dx, offset.dy),
-    );
+  Widget renderButton() {
+    if (widget.visible) {
+      RenderBox box = key.currentContext.findRenderObject();
+      final Offset offset = box.localToGlobal(Offset.zero);
+
+      return SpeedDial(
+        controller: widget.controller,
+        actions: widget.actions,
+        onAction: widget.onAction,
+        childOnFold: widget.childOnFold,
+        childOnUnfold: widget.childOnUnfold,
+        animationDuration: widget.animationDuration,
+        useRotateAnimation: widget.useRotateAnimation,
+        fullscreen: widget.fullscreen,
+        offset: Offset(offset.dx, offset.dy),
+      );
+    } else {
+      return Container();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('build');
-    return FloatingActionButton(onPressed: () {}, key: key);
+    return Visibility(child: FloatingActionButton(onPressed: () {}, key: key), visible: widget.visible);
   }
 }
 
